@@ -3,6 +3,9 @@ import logging
 from urllib.parse import urlparse, parse_qs
 from flask import Flask, request, Response
 import requests
+from dotenv import load_dotenv,dotenv_values
+
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -12,6 +15,8 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 def webhook_proxy():
+    load_dotenv(".env")
+    print(os.getenv("WEBHOOK_SECRET"))
     logger.info("Start")
     
     # Get token from query parameters
