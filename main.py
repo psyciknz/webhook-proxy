@@ -17,7 +17,6 @@ app = Flask(__name__)
 @app.route('/', methods=['GET','POST'])
 def webhook_proxy():
     load_dotenv(".env")
-    print(os.getenv("WEBHOOK_SECRET"))
     webhook_secret = os.getenv('WEBHOOK_SECRET')
     ryot_url = os.getenv('RYOT_URL')
     logger.info("Start")
@@ -45,9 +44,8 @@ def webhook_proxy():
         )
     
     # Construct target URL
-    ryot_url = os.getenv('RYOT_URL')
-    target_url = f"{ryot_url}/_i/{webhook_secret}"
-    logger.info(f"Target URL: {target_url}")
+    #target_url = f"{ryot_url}/_i/{webhook_secret}"
+    logger.info(f"Target URL: {ryot_url}")
     
     # Prepare headers for the forwarded request
     headers = dict(request.headers)
@@ -67,7 +65,7 @@ def webhook_proxy():
         # Forward the request
         response = requests.request(
             method=request.method,
-            url=target_url,
+            url=ryot_url,
             headers=headers,
             data=request.get_data(),
             params=request.args,
