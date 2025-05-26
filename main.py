@@ -28,6 +28,7 @@ def webhook_proxy():
     
     # Verify token against webhook secret
     webhook_secret = os.getenv('WEBHOOK_SECRET')
+    logger.debug(f"Webhook secret {webhook_secret} to compare to token {token}")
     if token != webhook_secret:
         return Response(
             ":(",
@@ -42,8 +43,6 @@ def webhook_proxy():
     
     # Prepare headers for the forwarded request
     headers = dict(request.headers)
-    headers['CF-Access-Client-Id'] = os.getenv('CF_CLIENT_ID')
-    headers['CF-Access-Client-Secret'] = os.getenv('CF_CLIENT_SECRET')
     
     # Remove hop-by-hop headers that shouldn't be forwarded
     hop_by_hop_headers = [
@@ -80,7 +79,7 @@ def webhook_proxy():
             response.content,
             status=response.status_code,
             headers=response_headers
-        )
+        )_
         
     except requests.RequestException as e:
         logger.error(f"Request failed: {e}")
