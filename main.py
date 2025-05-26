@@ -48,28 +48,18 @@ def webhook_proxy():
     logger.info(f"Target URL: {ryot_url}")
     
     # Prepare headers for the forwarded request
-    headers = dict(request.headers)
-    
-    # Remove hop-by-hop headers that shouldn't be forwarded
-    hop_by_hop_headers = [
-        'connection', 'keep-alive', 'proxy-authenticate',
-        'proxy-authorization', 'te', 'trailers', 'transfer-encoding',
-        'upgrade', 'host'
-    ]
-    for header in hop_by_hop_headers:
-        headers.pop(header, None)
-    
-    logger.info(f"Forwarding request with headers: {headers}")
-    
+    headers = dict()
+    headers = {
+        "Content-Type": "application/json"
+    }
     try:
         # Forward the request
         response = requests.request(
             method=request.method,
-            url=ryot_url,
             headers=headers,
+            url=ryot_url,
             data=request.get_data(),
-            params=request.args,
-            allow_redirects=False
+            allow_redirects=True
         )
         
         logger.info(f"Response status: {response.status_code}")
