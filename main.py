@@ -5,19 +5,28 @@ from flask import Flask, request, Response
 import requests
 from dotenv import load_dotenv,dotenv_values
 
+load_dotenv(".env")
 
-
+LOGLEVEL = os.getenv('LOGLEVEL','INFO').upper()
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=LOGLEVEL)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-@app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
+@app.route('/', methods=['GET','POST'])
 def webhook_proxy():
     load_dotenv(".env")
     print(os.getenv("WEBHOOK_SECRET"))
+    webhook_secret = os.getenv('WEBHOOK_SECRET')
+    ryot_url = os.getenv('RYOT_URL')
     logger.info("Start")
+    if request.method == 'GET':
+        logger.info(f"WebHook Secret: {webhook_secret}")
+        logger.info(f"URL: {ryot_url}")
+        return Response(f"WebHook Secret: {webhook_secret}, URL:{ryot_url}",200)
+        
+        
     
     # Get token from query parameters
     token = request.args.get('token')
@@ -27,7 +36,6 @@ def webhook_proxy():
     logger.info(f"Token: {token}")
     
     # Verify token against webhook secret
-    webhook_secret = os.getenv('WEBHOOK_SECRET')
     logger.debug(f"Webhook secret {webhook_secret} to compare to token {token}")
     if token != webhook_secret:
         return Response(
@@ -79,7 +87,7 @@ def webhook_proxy():
             response.content,
             status=response.status_code,
             headers=response_headers
-        )_
+        )
         
     except requests.RequestException as e:
         logger.error(f"Request failed: {e}")
