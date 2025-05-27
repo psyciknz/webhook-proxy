@@ -46,6 +46,10 @@ def webhook_proxy():
     # Construct target URL
     #target_url = f"{ryot_url}/_i/{webhook_secret}"
     logger.info(f"Target URL: {ryot_url}")
+    try:
+        logger.debug(request.get_data())
+    except:
+        pass
     
     # Prepare headers for the forwarded request
     headers = dict()
