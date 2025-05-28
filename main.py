@@ -20,17 +20,18 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET','POST'])
 def webhook_proxy():
-    load_dotenv(".env")
+    #load_dotenv(".env")
+    env = dotenv_values()
     webhook_secret = os.getenv('WEBHOOK_SECRET')
-    service_url_string = os.getenv('SERVICE_URLS')
+    service_url_string = env['SERVICE_URLS']
     service_urls: list
-    service_urls = service_url_string.split(",")
+    service_urls = service_url_string.split("\n")
     
     logger.info("Start")
     if request.method == 'GET':
         logger.info(f"WebHook Secret: {webhook_secret}")
         logger.info(f"URL: {','.join(service_urls)}")
-        return Response(f"WebHook Secret: {webhook_secret}",200)
+        return Response(status=403)
         
         
     
@@ -74,6 +75,7 @@ def webhook_proxy():
     if 'User-Agent' in headers:
         headers['User-Agent'] = f'Webhook-proxy {version}'
 
+    returnerror = None
     logger.debug(headers)
     for url in service_urls:
         try:
@@ -95,7 +97,7 @@ def webhook_proxy():
                 if name.lower() not in excluded_headers
             ]
             
-            if response.status_code > 400:
+            if response.status_code > 399:
                 returnerror = response.status_code
                 returncontent = response.content
             
