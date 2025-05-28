@@ -20,10 +20,12 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET','POST'])
 def webhook_proxy():
-    #load_dotenv(".env")
+    load_dotenv(".env")
     env = dotenv_values()
+    logger.info(json.dumps(env, indent=4))
     webhook_secret = os.getenv('WEBHOOK_SECRET')
-    service_url_string = env['SERVICE_URLS']
+    service_url_string = os.getenv('SERVICE_URLS')
+    logger.info(f"Service URLS: {service_url_string}")
     service_urls: list
     service_urls = service_url_string.split("\n")
     
