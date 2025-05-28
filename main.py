@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 from urllib.parse import urlparse, parse_qs
 from flask import Flask, request, Response
 import requests
@@ -7,7 +8,10 @@ from dotenv import load_dotenv,dotenv_values
 
 load_dotenv(".env")
 
+version = "0.1"
+
 LOGLEVEL = os.getenv('LOGLEVEL','INFO').upper()
+print(LOGLEVEL)
 # Configure logging
 logging.basicConfig(level=LOGLEVEL)
 logger = logging.getLogger(__name__)
@@ -42,27 +46,39 @@ def webhook_proxy():
             status=401,
             headers={'content-type': 'text/plain'}
         )
-    
+    #data = str(request.get_data())
+    data = request.get_data()
+    try:
+        logger.info("Loading data to json object")
+        datajson = json.loads(request.form['payload'])
+        logger.info(f"Event: {datajson['event']}")
+        logger.info(f"Server: {datajson['Server']['title']}")
+    except:
+        pass
+    # Remove all Unicode characters from the value
+
+    #data= data.replace("\\x", "")    
     # Construct target URL
     #target_url = f"{ryot_url}/_i/{webhook_secret}"
     logger.info(f"Target URL: {ryot_url}")
     try:
-        logger.debug(request.get_data())
+        logger.debug(data)
     except:
         pass
     
     # Prepare headers for the forwarded request
-    headers = dict()
-    headers = {
-        "Content-Type": "application/json"
-    }
+    headers = dict(request.headers)
+    if 'User-Agent' in headers:
+        headers['User-Agent'] = f'Webhook-proxy {version}'
+
+    logger.debug(headers)
     try:
         # Forward the request
         response = requests.request(
             method=request.method,
             headers=headers,
             url=ryot_url,
-            data=request.get_data(),
+            data=data,
             allow_redirects=True
         )
         
