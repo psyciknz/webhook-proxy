@@ -22,12 +22,15 @@ app = Flask(__name__)
 def webhook_proxy():
     load_dotenv(".env")
     webhook_secret = os.getenv('WEBHOOK_SECRET')
-    ryot_url = os.getenv('RYOT_URL')
+    service_url_string = os.getenv('SERVICE_URLS')
+    service_urls: list
+    service_urls = service_url_string.split(",")
+    
     logger.info("Start")
     if request.method == 'GET':
         logger.info(f"WebHook Secret: {webhook_secret}")
-        logger.info(f"URL: {ryot_url}")
-        return Response(f"WebHook Secret: {webhook_secret}, URL:{ryot_url}",200)
+        logger.info(f"URL: {','.join(service_urls)}")
+        return Response(f"WebHook Secret: {webhook_secret}",200)
         
         
     
@@ -60,7 +63,7 @@ def webhook_proxy():
     #data= data.replace("\\x", "")    
     # Construct target URL
     #target_url = f"{ryot_url}/_i/{webhook_secret}"
-    logger.info(f"Target URL: {ryot_url}")
+    logger.info(f"Target URL: {','.join(service_urls)}")
     try:
         logger.debug(data)
     except:
@@ -72,35 +75,53 @@ def webhook_proxy():
         headers['User-Agent'] = f'Webhook-proxy {version}'
 
     logger.debug(headers)
-    try:
-        # Forward the request
-        response = requests.request(
-            method=request.method,
-            headers=headers,
-            url=ryot_url,
-            data=data,
-            allow_redirects=True
-        )
-        
-        logger.info(f"Response status: {response.status_code}")
-        
-        # Create response with same status and headers
-        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-        response_headers = [
-            (name, value) for name, value in response.headers.items()
-            if name.lower() not in excluded_headers
-        ]
-        
+    for url in service_urls:
+        try:
+            # Forward the request
+            response = requests.request(
+                method=request.method,
+                headers=headers,
+                url=url,
+                data=data,
+                allow_redirects=True
+            )
+            
+            logger.info(f"Response status: {response.status_code}")
+            
+            # Create response with same status and headers
+            excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+            response_headers = [
+                (name, value) for name, value in response.headers.items()
+                if name.lower() not in excluded_headers
+            ]
+            
+            if response.status_code > 400:
+                returnerror = response.status_code
+                returncontent = response.content
+            
+            returnheaders = response_headers
+            
+        except requests.RequestException as e:
+            logger.error(f"Request failed: {e}")
+            returnerror =500
+            returncontent = f'Internal Server Error: {e}'
+            
+    
+    #for url in service_urls:
+    if returnerror is not None:
         return Response(
-            response.content,
-            status=response.status_code,
-            headers=response_headers
-        )
-        
-    except requests.RequestException as e:
-        logger.error(f"Request failed: {e}")
-        return Response('Internal Server Error', status=500)
-
+                    returncontent,
+                    status=returnerror,
+                    headers=returnheaders
+                )
+    else:
+        return Response(
+                    "success",
+                    status=200,
+                    headers=returnheaders
+                )
+#def webhook_proxy():
+    
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
