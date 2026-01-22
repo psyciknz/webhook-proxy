@@ -54,6 +54,10 @@ def webhook_proxy():
         )
     #data = str(request.get_data())
     data = request.get_data()
+    logger.debug("Posting Source Headers")
+    logger.debug(request.headers)
+    #User-agent for local server=PlexMediaServer
+    #User-agent for external=plex.tv
     try:
         logger.info("Loading data to json object")
         datajson = json.loads(request.form['payload'])
@@ -78,6 +82,7 @@ def webhook_proxy():
         headers['User-Agent'] = f'Webhook-proxy {version}'
 
     returnerror = None
+    logger.debug("Posting Dest Headers")
     logger.debug(headers)
     for url in service_urls:
         try:
